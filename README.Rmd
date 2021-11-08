@@ -41,7 +41,7 @@ Nine registration objects were tested, the first being the QTM L-Frame (4 passiv
 8. **FloorGrid_8pts**: 8 points on the lab floor.
 9. **FloorGrid_12pts**: 12 points on the lab floor.
 
-```{r img_objectcalibrations, echo=FALSE, fig.align = 'center', out.width = "100%", fig.cap = "A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism Markers with Floor Points. D: FloorGrid 12pts."}
+```{r img_objectcalibrations, echo=FALSE, fig.align = 'center', out.width = "50%", fig.cap = "A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism Markers with Floor Points. D: FloorGrid 12pts."}
 knitr::include_graphics("imgs/objects.PNG")
 ```
 
