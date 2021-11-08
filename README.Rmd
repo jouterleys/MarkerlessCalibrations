@@ -41,7 +41,7 @@ Nine registration objects were tested, the first being the QTM L-Frame (4 passiv
 9. **FloorGrid_12pts**: 12 points on the lab floor.
 
 ```{r img_objectcalibrations, echo=FALSE, fig.align = 'center', out.width = "100%", fig.cap = "A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism Markers with Floor Points. D: FloorGrid 12pts."}
-knitr::include_graphics("imgs/objects.png")
+knitr::include_graphics("imgs/objects.PNG")
 ```
 
 **Note**: for the Prism (corners or markers) and floor points - the coordinates of the clicked points were held constant for each registration process. For example, the same 4 floor point coordinates were used for condition 4, 6,and 7 above and not "re-clicked". These point locations located in the Theia3D program data folder.

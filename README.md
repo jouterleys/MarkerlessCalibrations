@@ -64,7 +64,7 @@ required registration points as defined in the object definition files
 
 <div class="figure" style="text-align: center">
 
-<img src="imgs/objects.png" alt="A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism Markers with Floor Points. D: FloorGrid 12pts." width="100%" />
+<img src="imgs/objects.PNG" alt="A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism Markers with Floor Points. D: FloorGrid 12pts." width="100%" />
 <p class="caption">
 A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism
 Markers with Floor Points. D: FloorGrid 12pts.
