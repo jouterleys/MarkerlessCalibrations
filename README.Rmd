@@ -12,6 +12,7 @@ output:
 library(knitr)
 library(rmarkdown)
 library(bookdown)
+library(here)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -56,7 +57,6 @@ The same walking trial was then processed using each registration object. The un
 library(v3dR)
 library(tidyverse)
 library(stringr)
-library(here)
 library(RColorBrewer)
 library(DT)
 
