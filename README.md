@@ -66,14 +66,15 @@ required registration points as defined in the object definition files
 8.  **FloorGrid\_8pts**: 8 points on the lab floor.
 9.  **FloorGrid\_12pts**: 12 points on the lab floor.
 
-<figure>
-<img src="imgs/objects.PNG" alt="" style="width:100%">
-<figcaption align="center">
-<b>Figure 1. Example points for registration objects. A: Lframe with
-Floor Points. B:Prism Corners with Floor Points. C:Prism Markers with
-Floor Points. D: FloorGrid 12pts.</b>
-</figcaption>
-</figure>
+<div class="figure" style="text-align: center">
+
+<img src="imgs/Objects.PNG" alt="A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism Markers with Floor Points. D: FloorGrid 12pts." width="100%" />
+<p class="caption">
+A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism
+Markers with Floor Points. D: FloorGrid 12pts.
+</p>
+
+</div>
 
 **Note**: for the Prism (corners or markers) and floor points - the
 coordinates of the clicked points were held constant for each
