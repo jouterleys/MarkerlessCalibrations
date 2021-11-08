@@ -3,6 +3,10 @@ Theia3D Registration Object and its Effect on Joint Positions and Angles
 Jereme Outerleys and Robert Kanko <br/>
 Last compiled on 2021-11-08
 
+<!--html_preserve-->
+
+<img src="https://www.queensu.ca/sites/default/files/assets/pages/QueensLogo_red.png" width="200px" heigth="200px"/><!--/html_preserve-->
+
 # Objective
 
 Investigate the sensitivity of registration object on Theia3D
@@ -62,15 +66,14 @@ required registration points as defined in the object definition files
 8.  **FloorGrid\_8pts**: 8 points on the lab floor.
 9.  **FloorGrid\_12pts**: 12 points on the lab floor.
 
-<div class="figure" style="text-align: center">
-
-<img src="imgs/objects.PNG" alt="A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism Markers with Floor Points. D: FloorGrid 12pts." width="50%" />
-<p class="caption">
-A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism
-Markers with Floor Points. D: FloorGrid 12pts.
-</p>
-
-</div>
+<figure>
+<img src="imgs/objects.PNG" alt="" style="width:100%">
+<figcaption align="center">
+<b>Figure 1. Example points for registration objects. A: Lframe with
+Floor Points. B:Prism Corners with Floor Points. C:Prism Markers with
+Floor Points. D: FloorGrid 12pts.</b>
+</figcaption>
+</figure>
 
 **Note**: for the Prism (corners or markers) and floor points - the
 coordinates of the clicked points were held constant for each
