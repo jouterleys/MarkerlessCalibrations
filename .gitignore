@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+## directories
+code/
+
+
+
+## filetypes
+*.cmo
+*.cmz
+*.cmx
+*.txt
+*.pptx

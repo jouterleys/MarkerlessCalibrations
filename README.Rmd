@@ -1,0 +1,429 @@
+---
+title: "Theia3D Registration Object and its Effect on Joint Positions and Angles"
+author: "Jereme Outerleys and Robert Kanko <br/> "
+date: "Last compiled on `r format(Sys.time(), '%Y-%m-%d')`"
+output:
+  github_document: 
+  fig_width: 9
+  fig_height: 8
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(rmarkdown)
+library(bookdown)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Objective
+Investigate the sensitivity of registration object on Theia3D biomechanical data. The practical goal is to understand how many points and what object configurations could be used in future collection scenarios.
+
+## Summary
+Based on the data presented, using points situated on the ground plane serves as a good calibration object for camera extrinsics and is comparable to using a 3D structure or prism. This is likely due to the increased visibility of the points making them easier to select in Theia3D – but also, it’s easier to cover a larger space as compared to a small to medium size 3D calibration structure. Using floord points is useful if semi-permanent calibration points can be located on the ground or floor of the collection volume. As a result, any video-set can be used to perform registration. This may not be advised, however, if the ground/floor is not flat. If needing to use a larger 3D object - it is advised to place markers on it that are highly visible. The corners of the object are hard to select at far distances. 
+
+Please note this is different than what is required for lens calibration (i.e., camera intrinsic). A chessboard is required for camera intrinsic. 
+
+# Experimental Design
+8 Qualisys Miqus video cameras collecting video data at 85 Hz.
+
+The Miqus were first calibrated and registered using the Qualisys wand and L-Frame process in combination with 11 Oqus cameras. This  served as the "reference" registration condition. We assume that the optoelectronic process is gold standard in terms of calibration and localizing the origin (as opposed to clicking points in Theia3D). This process also provides access to the instrinsic parameters of the Miqus. The Miqus intrinsics were first loaded in to Theia3D before any object calibraion was performed. 
+
+Nine registration objects were tested, the first being the QTM L-Frame (4 passive marker points attached to the L-Frame) as registered through QTM. The next 8 objects were registered using Theia3D by clicking the required registration points as defined in the object definition files (which were made by us):
+
+1. **QTM**: L-Frame as registered by through QTM - i.e. reference
+2. **Lframe_wFloor**: The Qualisys L-Frame with 4 additional points on the lab floor.
+3. **Prism_Corners**: The corners of the prism.
+4. **Prism_Corners_wFloor**: The corners of the prism along with 4 additional points on the lab floor.
+5. **Prism_Markers**: Motion capture markers attached to the midpoints on the Prism extrustion.
+6. **Prism_Markers_wFloor**: Motion capture markers attached to the midpoints on the Prism extrustion along with 4 additional points on the lab floor.
+7. **FloorGrid_4pts**: 4 points on the lab floor.
+8. **FloorGrid_8pts**: 8 points on the lab floor.
+9. **FloorGrid_12pts**: 12 points on the lab floor.
+
+```{r img_objectcalibrations, echo=FALSE, fig.align = 'center', out.width = "100%", fig.cap = "A: Lframe with Floor Points. B:Prism Corners with Floor Points. C:Prism Markers with Floor Points. D: FloorGrid 12pts."}
+knitr::include_graphics("imgs/objects.PNG")
+```
+
+**Note**: for the Prism (corners or markers) and floor points - the coordinates of the clicked points were held constant for each registration process. For example, the same 4 floor point coordinates were used for condition 4, 6,and 7 above and not "re-clicked". These point locations located in the Theia3D program data folder.
+
+The same walking trial was then processed using each registration object. The unfiltered pose data was used.
+
+3D joint positions were extracted for all segments predicted by Theia3D. The X, Y and Z coordinate waveforms for the ankle, knee and hip joint positions were visualized. The 3D euclidean distance was also calculated between the QTM object (reference). The root mean squared (RMS) difference between each of the 8 Theia3D registered objects and the QTM registered object was then calculated for each coordinate and the 3D magnitude. This was also performed for joint angles of the ankle, knee and hip.
+
+```{r data_setup, echo=FALSE, message=FALSE}
+#library(devtools)
+#install_github("jouterleys/v3dR")
+library(v3dR)
+library(tidyverse)
+library(stringr)
+library(here)
+library(RColorBrewer)
+library(DT)
+
+
+# Build a function to do something on each dataframe
+loopV3DR <- function(full_filepath){
+  
+  # Add some contextual information to the dataframe
+  # from each loop on import.
+  
+  # side information is contained in the txt filename.
+  #object <- strsplit(basename(full_filepath), "_")[[1]][1]
+  
+  # condition information is contained in the folder path
+  # In this case the folder name up two directories from the txt file is the subID
+  object <- basename((dirname(full_filepath)))
+  
+  # Read current txt file into a dataframe and add the columns condition and side.
+  df <- v3dR(full_filepath) %>%  mutate(object = object)
+  
+  return(df)
+  
+}
+
+# Build an RMS function
+RMS <- function(num) sqrt(sum(num^2)/length(num))
+
+# Define path to data folder
+resultsPath <- here('data')
+
+# Create list of subjects based on subject folders
+subList <- list.dirs(resultsPath, recursive=FALSE)
+
+# Build dataframe containing all subject data
+# Creates list of all txt files from within the results folder
+# Then runs the loopV3DR function on each item in the list
+df <- list.files(file.path(subList), pattern = "*.txt", full.names = TRUE) %>% 
+  map_df(~loopV3DR(.)) 
+
+
+
+# Make sure df is dataframe...
+df <- as.data.frame(df)
+
+# Remove "VLB","RTA","LAB"
+patterns <- c("VLB","RTA","LAB")
+df <- df %>%
+  filter(!grepl(paste(patterns, collapse="|"), signal_folder))
+
+
+
+# set object as factor
+df$object <- as.factor(df$object)
+
+# recode to human readable labels
+df$object <- recode(df$object ,
+                    "00001" = 'QTM',
+                    "00002"= 'Lframe_wFloor',
+                    "00003" = 'Prism_Corners',
+                    "00004"= 'Prism_Corners_wFloor',
+                    "00005" = 'Prism_Markers',
+                    "00006"= 'Prism_Markers_wFloor',
+                    "00007" = 'FloorGrid_4pts',
+                    "00008"= 'FloorGrid_8pts',
+                    "00009" = 'FloorGrid_12pts')
+
+# remove c3d_name and instance columns
+df <- df %>%
+  select(-c('c3d_name','instance'))
+
+df_ProxEndPos <- df %>%
+  filter(signal_names=="ProxEndPos")
+
+df_ProxEndPos <- df_ProxEndPos %>%
+  unite("signal_names", signal_folder, signal_names, remove = FALSE) %>%
+  mutate(value = value*1000)
+
+df <- df %>%
+  filter(signal_types=="LINK_MODEL_BASED")
+
+df <- rbind(df,df_ProxEndPos)
+
+
+# extract QTM data to use as reference frame
+df_QTM = df %>% filter(object == 'QTM')
+
+# subtract QTM data from rest of data (i.e. difference)
+df <- df %>% 
+  group_by(object) %>% 
+  mutate(dvalue = df_QTM$value - value)
+
+df_QTM <- df_QTM %>%
+  pivot_wider(names_from = signal_components, values_from = value)
+
+
+df_value <- df %>% select(-dvalue)
+
+df_dvalue <- df %>% select(-value)
+
+df_value <- df_value %>%
+  pivot_wider(names_from = signal_components, values_from = c(value)) %>%
+  mutate(R = sqrt(X^2 + Y^2 + Z^2)) %>%
+  pivot_longer(cols = X:R, names_to = "signal_components",values_to = "value")
+
+df_dvalue <- df_dvalue %>%
+  pivot_wider(names_from = signal_components, values_from = c(dvalue)) %>%
+  mutate(R = sqrt(X^2 + Y^2 + Z^2)) %>%
+  pivot_longer(cols = X:R, names_to = "signal_components",values_to = "dvalue")
+
+
+df <- merge(df_value,df_dvalue)
+df <- as.data.frame(df)
+
+
+
+#missing = which(complete.cases(df) == FALSE)
+#missing <- df[missing,]
+
+```
+
+
+# Joint Positions
+
+## Left Ankle, Knee and Hip Joint
+```{r ProxEndPos_L_x, fig.height = 8, fig.width = 9, fig.align = "center", dpi=300, echo=FALSE}
+patterns <- c("LFT","LSK","LTH")
+
+df %>% 
+  filter(grepl("ProxEndPos", signal_names)) %>%
+  filter(grepl(paste(patterns, collapse="|"), signal_folder)) %>%
+  filter(signal_components == 'X') %>%
+  ggplot(aes(x = item, y = value, group = object, color = object)) +
+  geom_line(size=1) +
+  scale_color_brewer(palette = "Paired")+
+  ylab('Position (mm)')+
+  theme_bw()+
+  facet_wrap(~signal_components ~ signal_names,nrow = 3,scales = "free")
+```
+
+## Right Ankle, Knee and Hip Joint
+```{r ProxEndPos_R_x, fig.height = 8, fig.width = 9, fig.align = "center", dpi=300, echo=FALSE}
+patterns <- c("RFT","RSK","RTH")
+
+df %>% 
+  filter(grepl("ProxEndPos", signal_names)) %>%
+  filter(grepl(paste(patterns, collapse="|"), signal_folder)) %>%
+  filter(signal_components == 'X') %>%
+  ggplot(aes(x = item, y = value, group = object,color = object)) +
+  geom_line(size=1) +
+  scale_color_brewer(palette = "Paired")+
+  ylab('Position (mm)')+
+  theme_bw()+
+  facet_wrap(~signal_components ~ signal_names,nrow = 3,scales = "free")
+```
+
+```{r ProxEndPos_R_y, fig.height = 8, fig.width = 9, fig.align = "center", dpi=300, echo=FALSE}
+patterns <- c("RFT","RSK","RTH")
+
+df %>% 
+  filter(grepl("ProxEndPos", signal_names)) %>%
+  filter(grepl(paste(patterns, collapse="|"), signal_folder)) %>%
+  filter(signal_components == 'Y') %>%
+  ggplot(aes(x = item, y = value, group = object,color = object)) +
+  geom_line(size=1) +
+  scale_color_brewer(palette = "Paired")+
+  ylab('Position (mm)')+
+  theme_bw()+
+  facet_wrap(~signal_components ~ signal_names,nrow = 3,scales = "free")
+```
+
+```{r ProxEndPos_R_z, fig.height = 8, fig.width = 9, fig.align = "center", dpi=300, echo=FALSE}
+patterns <- c("RFT","RSK","RTH")
+
+df %>% 
+  filter(grepl("ProxEndPos", signal_names)) %>%
+  filter(grepl(paste(patterns, collapse="|"), signal_folder)) %>%
+  filter(signal_components == 'Z') %>%
+  ggplot(aes(x = item, y = value, group = object,color = object)) +
+  geom_line(size=1) +
+  scale_color_brewer(palette = "Paired")+
+  ylab('Position (mm)')+
+  theme_bw()+
+  facet_wrap(~signal_components ~ signal_names,nrow = 3,scales = "free")
+```
+
+# Root Mean Squared Difference with QTM L-Frame Registration
+
+```{r ProxEndPos_X_table, echo=FALSE, message=FALSE}
+
+patterns <- c("RFT","RSK","RTH","LFT","LSK","LTH")
+
+tble <-df %>%
+  filter(!grepl("QTM", object)) %>%
+  filter(grepl("ProxEndPos", signal_names)) %>%
+  filter(grepl(paste(patterns, collapse="|"), signal_folder)) %>%
+  filter(signal_components == 'X') %>%
+  group_by(object,signal_names,signal_components) %>%
+  summarise(value = RMS(dvalue)) %>%
+  pivot_wider(names_from = signal_components, values_from = value)%>%
+  pivot_wider(names_from = signal_names, values_from = X) %>%
+  ungroup()%>%
+  mutate(Mean = rowMeans(.[,-1], na.rm = TRUE))
+
+
+```
+
+## Root Mean Squared Difference of X-Component (mm)
+```{r Table1, echo=FALSE, message=FALSE}
+knitr::kable(tble, digits = 2, col.names = gsub("_ProxEndPos", " ", names(tble)))
+```
+
+```{r ProxEndPos_Y_table, echo=FALSE, message=FALSE}
+tble <-df %>%
+  filter(!grepl("QTM", object)) %>%
+  filter(grepl("ProxEndPos", signal_names)) %>%
+  filter(grepl(paste(patterns, collapse="|"), signal_folder)) %>%
+  filter(signal_components == 'Y') %>%
+  group_by(object,signal_names,signal_components) %>%
+  summarise(value = RMS(dvalue)) %>%
+  pivot_wider(names_from = signal_components, values_from = value)%>%
+  pivot_wider(names_from = signal_names, values_from = Y)%>%
+  ungroup()%>%
+  mutate(Mean = rowMeans(.[,-1], na.rm = TRUE))
+```
+
+## Root Mean Squared Difference of Y-Component (mm)
+```{r Table2, echo=FALSE, message=FALSE}
+knitr::kable(tble, digits = 2, col.names = gsub("_ProxEndPos", " ", names(tble)))
+```
+
+```{r "ProxEndPos_Z_table", echo=FALSE, message=FALSE}
+tble <-df %>%
+    filter(!grepl("QTM", object)) %>%
+  filter(grepl("ProxEndPos", signal_names)) %>%
+  filter(grepl(paste(patterns, collapse="|"), signal_folder)) %>%
+  filter(signal_components == 'Z') %>%
+  group_by(object,signal_names,signal_components) %>%
+  summarise(value = RMS(dvalue)) %>%
+  pivot_wider(names_from = signal_components, values_from = value)%>%
+  pivot_wider(names_from = signal_names, values_from = Z)%>%
+  ungroup()%>%
+  mutate(Mean = rowMeans(.[,-1], na.rm = TRUE))
+```
+
+## Root Mean Squared Difference of Z-Component (mm)
+```{r Table3, echo=FALSE, message=FALSE}
+knitr::kable(tble, digits = 2, col.names = gsub("_ProxEndPos", " ", names(tble)))
+```
+
+```{r ProxEndPos_R_table, echo=FALSE, message=FALSE}
+patterns <- c("VLB","RTA","LAB")
+
+tble <- df %>%
+  filter(!grepl("QTM", object)) %>%
+  filter(grepl("ProxEndPos", signal_names)) %>%
+  filter(!grepl(paste(patterns, collapse="|"), signal_folder)) %>%
+  filter(signal_components == 'R') %>%
+  group_by(object,signal_names,signal_components) %>%
+  summarise(value = RMS(dvalue)) %>%
+  pivot_wider(names_from = signal_components, values_from = value)%>%
+  pivot_wider(names_from = signal_names, values_from = R)%>%
+  ungroup()%>%
+  mutate(Mean = rowMeans(.[,-1], na.rm = TRUE))
+```
+
+## Root Mean Squared Difference of 3D Euclidean (mm)
+```{r Table4, echo=FALSE, message=FALSE}
+knitr::kable(tble, digits = 2, col.names = gsub("_ProxEndPos", " ", names(tble)))
+```
+
+``` {r summary_table, echo=FALSE, message=FALSE}
+#tble <-as.data.frame(tble) %>%summarise_each(funs( mean( .,na.rm = FALSE)))
+#knitr::kable(tble, digits = 2, col.names = gsub("_ProxEndPos", " ", names(tble)))
+```
+
+# Joint Angles
+## Right and Left Ankle, Knee, and Hip Flexion Angles
+```{r KNEE_ANGLE, fig.height = 8, fig.width = 9, fig.align = "center", dpi=300, echo=FALSE}
+df %>% 
+  filter(grepl("_KNEE_ANGLE", signal_names)) %>%
+  filter(signal_components == 'X') %>%
+  ggplot(aes(x = item, y = value, group = object,color = object)) +
+  geom_line(size=1) +
+  scale_color_brewer(palette = "Paired")+
+  ylab('Joint Angle (degrees)')+
+  theme_bw()+
+  facet_wrap(~signal_components ~ signal_names,nrow = 2)
+```
+
+```{r ANKLE_ANGLE, fig.height = 8, fig.width = 9, fig.align = "center", dpi=300, echo=FALSE}
+df %>% 
+  filter(grepl("_ANKLE_ANGLE", signal_names)) %>%
+  filter(signal_components == 'X') %>%
+  ggplot(aes(x = item, y = value, group = object,color = object)) +
+  geom_line(size=1) +
+  scale_color_brewer(palette = "Paired")+
+  ylab('Joint Angle (degrees)')+
+  theme_bw()+
+  facet_wrap(~signal_components ~ signal_names,nrow  = 2)
+```
+
+```{r HIP_ANGLE, fig.height = 8, fig.width = 9, fig.align = "center", dpi=300, echo=FALSE}
+df %>% 
+  filter(grepl("_HIP_ANGLE", signal_names)) %>%
+  filter(signal_components == 'X') %>%
+  ggplot(aes(x = item, y = value, group = object,color = object)) +
+  geom_line(size=1) +
+  scale_color_brewer(palette = "Paired")+
+  ylab('Joint Angle (degrees)')+
+  theme_bw()+
+  facet_wrap(~signal_components ~ signal_names,nrow  = 2)
+```
+
+# Root Mean Squared Difference with QTM L-Frame Registration
+
+## Root Mean Squared Difference of X-Component (deg.)
+```{r X_table, echo=FALSE, message=FALSE}
+tble <- df %>%
+  filter(!grepl("QTM", object)) %>%
+  filter(grepl("LINK_MODEL_BASED", signal_types)) %>%
+  filter(signal_components == 'X') %>%
+  group_by(object,signal_names,signal_components) %>%
+  summarise(value = RMS(dvalue)) %>%
+  pivot_wider(names_from = signal_components, values_from = value)%>%
+  pivot_wider(names_from = signal_names, values_from = X)%>%
+  ungroup()%>%
+  mutate(Mean = rowMeans(.[,-1], na.rm = TRUE))
+```
+
+```{r table5, echo=FALSE, message=FALSE}
+knitr::kable(tble, digits = 2, col.names = gsub("_", " ", names(tble)))
+```
+
+## Root Mean Squared Difference of Y-Component (deg.)
+```{r Y_table, echo=FALSE, message=FALSE}
+tble <-df %>%
+  filter(!grepl("QTM", object)) %>%
+  filter(grepl("LINK_MODEL_BASED", signal_types)) %>%
+  filter(signal_components == 'Y') %>%
+  group_by(object,signal_names,signal_components) %>%
+  summarise(value = RMS(dvalue)) %>%
+  pivot_wider(names_from = signal_components, values_from = value)%>%
+  pivot_wider(names_from = signal_names, values_from = Y)%>%
+  ungroup()%>%
+  mutate(Mean = rowMeans(.[,-1], na.rm = TRUE))
+
+```
+
+```{r table6, echo=FALSE, message=FALSE}
+knitr::kable(tble, digits = 2, col.names = gsub("_", " ", names(tble)))
+```
+
+## Root Mean Squared Difference of Z-Component (deg.)
+```{r "Z_table", fig.height = 8, fig.width = 9, fig.align = "center", dpi=300, echo=FALSE,message=FALSE}
+tble <-df %>%
+    filter(!grepl("QTM", object)) %>%
+
+  filter(grepl("LINK_MODEL_BASED", signal_types)) %>%
+  filter(signal_components == 'Z') %>%
+  group_by(object,signal_names,signal_components) %>%
+  summarise(value = RMS(dvalue)) %>%
+  pivot_wider(names_from = signal_components, values_from = value)%>%
+  pivot_wider(names_from = signal_names, values_from = Z)%>%
+  ungroup()%>%
+  mutate(Mean = rowMeans(.[,-1], na.rm = TRUE))
+```
+
+```{r table7, echo=FALSE, message=FALSE}
+knitr::kable(tble, digits = 2, col.names = gsub("_", " ", names(tble)))
+```
